@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zotero 文献文档生成"
+  short_description: "从 Zotero 文献库生成 Word、PDF 与 PPT 文献文档"
+  default_prompt: "Use $zotero-literature-docs to generate Word/PDF/PPT literature documents from my Zotero library."
