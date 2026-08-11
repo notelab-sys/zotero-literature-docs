@@ -18,6 +18,7 @@
 - **真实插图**：`figs` 按 PDF 内嵌图片的包围盒裁剪真实图（非整页截图）→ `work/ppt_images/`
 - **汇报 PPT**：`ppt` 基于 PowerPoint 生成骨架，JSON 配置驱动（cover / toc / pic / text / refs 五种版式），支持任意页数
 - **质量校验**：Word / PDF 重开校验 + 乱码扫描；PPT 以有窗口方式在 PowerPoint 中打开并导出 PDF 预览
+- **中英双语**：配置 `"lang": "en"` 即可输出英文版三件套（Abstract / Keywords / References 标签与 PPT 图注自动切换为英文）
 
 ## 环境要求
 
@@ -86,6 +87,7 @@ zotero-literature-docs/
 - 新主题出现新的基因名 / 植物属名时，在 `scripts/make_review_docs.py` 的 `ITALIC_WORDS` / `PLANT_GENERA` 中补充
 - 不要用 Word COM 做文档转换（本机不稳定）；PPT 校验必须 `WithWindow=$true`
 - 配图默认裁剪真实插图；仅当论文无内嵌位图且用户明确同意时才使用 `--whole-page` 整页模式
+- 需要英文版交付物时，在 `review_content.json` 与 `deck_config.json` 中设置 `"lang": "en"`
 
 ## 开源协议
 

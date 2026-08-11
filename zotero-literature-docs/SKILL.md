@@ -122,6 +122,9 @@ python work/zotero_docs.py ppt work/deck_config.json
 - In Word, gene symbols and Latin binomials are italic; protein/enzyme
   abbreviations are regular. Extend `ITALIC_WORDS` / `PLANT_GENERA` in
   `make_review_docs.py` when a new topic introduces new symbols.
+- English mode: set `"lang": "en"` in `review_content.json` (and optionally in
+  `deck_config.json`) to render English labels (Abstract / Keywords /
+  References) in Word/PDF and English PPT captions ("Figure from reference [n]").
 - Do not use Word COM for conversion (hangs on this machine). PowerPoint COM
   `AddPicture` is unstable; assemble pictures via XML instead.
 

@@ -18,6 +18,7 @@ It reads clean data from the Zotero local API, produces review documents (Word +
 - **Real figures**: `figs` crops embedded raster figures by their bounding boxes (not whole-page screenshots) → `work/ppt_images/`
 - **Presentation deck**: `ppt` builds on a PowerPoint-generated skeleton, driven by a JSON config (cover / toc / pic / text / refs slide types), any slide count
 - **Validation**: Word / PDF re-open check + garble scan; PPT opened in PowerPoint with a visible window and exported to a PDF preview
+- **Bilingual output**: set `"lang": "en"` in the config to generate English deliverables (Abstract / Keywords / References labels and PPT captions switch to English)
 
 ## Requirements
 
@@ -86,6 +87,7 @@ zotero-literature-docs/
 - When a new topic introduces new gene names / plant genera, extend `ITALIC_WORDS` / `PLANT_GENERA` in `scripts/make_review_docs.py`
 - Do not use Word COM for document conversion (unstable on this machine); PPT validation must use `WithWindow=$true`
 - Figures are cropped real figures by default; use `--whole-page` only when a paper has no embedded raster figures and the user explicitly agrees
+- For English deliverables, set `"lang": "en"` in `review_content.json` and `deck_config.json`
 
 ## License
 

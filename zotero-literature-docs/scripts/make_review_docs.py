@@ -48,6 +48,7 @@ from fpdf import FPDF  # noqa: E402
 
 CONTENT_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else WORK / "review_content.json"
 CONTENT = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
+EN = str(CONTENT.get("lang", "")).lower() == "en"
 DATA_PATH = WORK / "data.json"
 for a in sys.argv[1:]:
     if a.startswith("--data"):
@@ -644,16 +645,16 @@ def build_docx(ref_keys):
             r.add_break()
     add_para(doc, CONTENT["subtitle"], size=9, color=GRAY, align=WD_ALIGN_PARAGRAPH.CENTER, after=8)
     if CONTENT.get("intro"):
-        add_para(doc, "摘  要：" + render_text(CONTENT["intro"]), size=10.5, after=6, italics=True)
+        add_para(doc, ("Abstract：" if EN else "摘  要：") + render_text(CONTENT["intro"]), size=10.5, after=6, italics=True)
     if CONTENT.get("keywords"):
-        add_para(doc, "关键词：" + CONTENT["keywords"], size=9, color=GRAY, after=8)
-    if CONTENT.get("title_en"):
+        add_para(doc, ("Keywords：" if EN else "关键词：") + CONTENT["keywords"], size=9, color=GRAY, after=8)
+    if not EN and CONTENT.get("title_en"):
         add_para(doc, CONTENT["title_en"], size=14, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, after=4)
-    if CONTENT.get("abstract_en"):
+    if not EN and CONTENT.get("abstract_en"):
         p = add_para(doc, "Abstract：" + CONTENT["abstract_en"], size=9, color=GRAY,
                      after=6, italics=True)
         p.paragraph_format.first_line_indent = Pt(0)
-    if CONTENT.get("keywords_en"):
+    if not EN and CONTENT.get("keywords_en"):
         add_para(doc, "Keywords：" + CONTENT["keywords_en"], size=9, color=GRAY, after=8)
 
     sec_idx = 0
@@ -675,7 +676,7 @@ def build_docx(ref_keys):
             for item in group.get("items", []):
                 add_para(doc, render_text(item), size=10.5, after=3, indent=True, italics=True)
 
-    add_para(doc, "参考文献", size=14, after=5, east="SimSun")
+    add_para(doc, "References" if EN else "参考文献", size=14, after=5, east="SimSun")
     doc.paragraphs[-1].paragraph_format.space_before = Pt(12)
     for key in sorted(ref_keys, key=ref_sort_key):
         txt = ref_text(key)
@@ -979,19 +980,19 @@ def build_pdf(ref_keys):
         pdf.ln(1.2)
 
     if CONTENT.get("intro"):
-        abs_block("摘  要：", pdf_safe(render_text(CONTENT["intro"])), "Hei", 9, 9, 0, 0)
+        abs_block("Abstract：" if EN else "摘  要：", pdf_safe(render_text(CONTENT["intro"])), "Hei", 9, 9, 0, 0)
     if CONTENT.get("keywords"):
-        abs_block("关键词：", CONTENT["keywords"], "Hei", 9, 9, 0, 0)
-    if CONTENT.get("title_en"):
+        abs_block("Keywords：" if EN else "关键词：", CONTENT["keywords"], "Hei", 9, 9, 0, 0)
+    if not EN and CONTENT.get("title_en"):
         pdf.ln(2)
         pdf.set_font("TimesB", size=14)
         pdf.set_text_color(15, 15, 15)
         pdf.multi_cell(PAGE_W, 7.5, CONTENT["title_en"], align="L")
         pdf.set_x(LM)
         pdf.ln(2)
-    if CONTENT.get("abstract_en"):
+    if not EN and CONTENT.get("abstract_en"):
         abs_block("Abstract:", CONTENT["abstract_en"], "TimesB", 10.5, 10.5, 0, 0)
-    if CONTENT.get("keywords_en"):
+    if not EN and CONTENT.get("keywords_en"):
         abs_block("Keywords:", CONTENT["keywords_en"], "TimesB", 10.5, 10.5, 0, 0)
     pdf.ln(1)
 
@@ -1044,7 +1045,7 @@ def build_pdf(ref_keys):
                 item(pdf_safe(render_text(text)))
 
     # ---- References (SimSun 7.5 pt, alphabetical) ----
-    section("参考文献", "")
+    section("References" if EN else "参考文献", "")
     set_font("Song", 7.5, (25, 25, 25))
     hang = 5.3   # two full-width characters at 7.5 pt
     lh = 3.9

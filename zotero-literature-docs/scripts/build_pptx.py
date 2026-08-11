@@ -28,6 +28,7 @@ import os
 import re
 import struct
 import sys
+EN = False
 import zipfile
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -211,26 +212,31 @@ def cover_slide(spec):
 
 def toc_slide(spec):
     paras = [fmt_paragraph(it, size=2000, bullet=False, spacing=800) for it in spec.get("items", [])]
+    title = spec.get("title") or ("Contents" if EN else "目录")
     shapes = [sp_rect(0, 0, SLIDE_W, SLIDE_H, BG, sid=2),
               sp_rect(0, 0, SLIDE_W, TITLE_H, BAR, sid=3),
               sp_text(MARGIN, 200000, SLIDE_W - 2 * MARGIN, 700000,
-                      [fmt_paragraph("目录", size=3200, bold=True, color=DARK)], sid=4),
+                      [fmt_paragraph(title, size=3200, bold=True, color=DARK)], sid=4),
               sp_text(MARGIN, TITLE_H + 300000, SLIDE_W - 2 * MARGIN, SLIDE_H - TITLE_H - 600000, paras, sid=5)]
     return slide_xml(shapes)
 
 
 def refs_slide(spec):
     count = spec.get("count", 10)
+    title = spec.get("title") or ("References" if EN else "参考文献")
     refs_list = sorted(REFNO.items(), key=lambda kv: kv[1])[:count]
     paras = []
     for key, n in refs_list:
         e = DATA.get(key, {})
-        text = f"[{n}] {short_author(e.get('author', ''))}（{e.get('year', '')}）《{clean_title(e.get('title', ''))}》"
+        if EN:
+            text = f"[{n}] {short_author(e.get('author', ''))} ({e.get('year', '')}) {clean_title(e.get('title', ''))}"
+        else:
+            text = f"[{n}] {short_author(e.get('author', ''))}（{e.get('year', '')}）《{clean_title(e.get('title', ''))}》"
         paras.append(fmt_paragraph(text, size=1350, color="333333", bullet=False, spacing=200))
     shapes = [sp_rect(0, 0, SLIDE_W, SLIDE_H, BG, sid=2),
               sp_rect(0, 0, SLIDE_W, TITLE_H, BAR, sid=3),
               sp_text(MARGIN, 200000, SLIDE_W - 2 * MARGIN, 700000,
-                      [fmt_paragraph("参考文献", size=3200, bold=True, color=DARK)], sid=4),
+                      [fmt_paragraph(title, size=3200, bold=True, color=DARK)], sid=4),
               sp_text(MARGIN, TITLE_H + 200000, SLIDE_W - 2 * MARGIN, SLIDE_H - TITLE_H - 300000, paras, sid=5)]
     return slide_xml(shapes)
 
@@ -241,12 +247,15 @@ def caption_for(key):
     author = short_author(e.get("author", ""))
     year = e.get("year", "")
     title = clean_title(e.get("title", ""))
+    if EN:
+        return f"Figure from reference [{n}]: {author} ({year}) {title}"
     return f"图片引自参考文献[{n}]：{author}（{year}）《{title}》"
 
 
 def make_deck(config=None):
-    global REFNO, DATA, REVIEW_CONTENT
+    global REFNO, DATA, REVIEW_CONTENT, EN
     cfg = config or CONFIG
+    EN = str(cfg.get("lang", "")).lower() == "en"
     REVIEW_CONTENT = cfg.get("review_content", "review_content.json")
     REFNO = ref_numbers(REVIEW_CONTENT)
     DATA = load_data()
