@@ -412,6 +412,8 @@ def add_para(doc, text, size=11, color=None, bold=False, align=None, after=6,
         r.font.color.rgb = color
     r.bold = bold
     set_east_asia(r, east)
+    if EN:
+        r.font.name = "Times New Roman"
     return p
 
 
@@ -425,6 +427,8 @@ def _add_run(p, text, size, color, bold, east, italic):
     r.bold = bold
     r.italic = italic
     set_east_asia(r, east)
+    if EN:
+        r.font.name = "Times New Roman"
 
 
 def add_italicized_runs(p, text, size=10.5, color=None, bold=False, east="SimSun"):
@@ -720,7 +724,7 @@ def png_size(path):
 class ReviewPDF(FPDF):
     def footer(self):
         self.set_y(-13)
-        self.set_font("Song", size=7.5)
+        self.set_font("TimesR" if EN else "Song", size=7.5)
         self.set_text_color(120, 125, 130)
         if EN:
             self.cell(0, 8, f"Page {self.page_no()} of {{nb}}", align="C")
@@ -761,6 +765,8 @@ def wrap_title(pdf, text, width_mm):
 def draw_mixed(pdf, x, y, width, lh, text, size,
                align="L", reg_font="Song", italic_font="TimesI"):
     """Draw one PDF line with italic Latin/gene segments in Times Italic."""
+    if EN:
+        reg_font = "TimesR"
     spans = italic_spans(text)
     parts = []
     pos = 0
@@ -920,7 +926,7 @@ def render_figure(pdf, spec, LM, PAGE_W, y_bottom=282):
         pdf.multi_cell(PAGE_W, 4.8, spec["caption"], align="C")
         pdf.set_x(LM)
     if spec.get("caption_en"):
-        pdf.set_font("Song", size=7.5)
+        pdf.set_font("TimesR" if EN else "Song", size=7.5)
         pdf.set_text_color(90, 90, 90)
         pdf.multi_cell(PAGE_W, 4.0, spec["caption_en"], align="C")
         pdf.set_x(LM)
@@ -937,7 +943,7 @@ def build_pdf(ref_keys):
     pdf.add_font("TimesB", fname=str(FONT_DIR / "timesbd.ttf"))
     pdf.add_font("TimesI", fname=str(FONT_DIR / "timesi.ttf"))
     pdf.set_title(CONTENT["title"])
-    pdf.set_author("Zotero 文献整理")
+    pdf.set_author("Zotero Literature Compilation" if EN else "Zotero 文献整理")
     pdf.alias_nb_pages()
     pdf.add_page()
 
@@ -953,12 +959,12 @@ def build_pdf(ref_keys):
         pdf.set_text_color(*color)
 
     # ---- Title (SimHei 22 pt, centered; balanced character wrapping) ----
-    set_font("Hei", 22)
+    set_font("TimesB" if EN else "Hei", 22)
     for ln in wrap_title(pdf, CONTENT["title"], PAGE_W):
         pdf.multi_cell(0, 11.5, ln, align="C")
         pdf.set_x(LM)
     pdf.ln(1.5)
-    set_font("Song", 9, (110, 116, 125))
+    set_font("TimesR" if EN else "Song", 9, (110, 116, 125))
     pdf.multi_cell(0, 4.8, CONTENT["subtitle"], align="C")
     pdf.set_x(LM)
     pdf.ln(3)
@@ -971,7 +977,7 @@ def build_pdf(ref_keys):
         x_first = LM + block_mm + first_mm
         pdf.set_font(label_font, size=label_size)
         lw = pdf.get_string_width(label)
-        pdf.set_font("Song", size=body_size)
+        pdf.set_font("TimesR" if EN else "Song", size=body_size)
         width_first = LM + PAGE_W - x_first - lw
         lines = wrap_text(pdf, text, width_first)
         total = lh * len(lines)
@@ -983,7 +989,7 @@ def build_pdf(ref_keys):
         pdf.set_text_color(25, 25, 25)
         pdf.set_xy(x_first, y)
         pdf.cell(lw, lh, label)
-        pdf.set_font("Song", size=body_size)
+        pdf.set_font("TimesR" if EN else "Song", size=body_size)
         pdf.set_text_color(35, 35, 35)
         draw_mixed(pdf, x_first + lw, y, width_first, lh, lines[0], body_size)
         for k, ln in enumerate(lines[1:], start=1):
@@ -993,9 +999,9 @@ def build_pdf(ref_keys):
         pdf.ln(1.2)
 
     if CONTENT.get("intro"):
-        abs_block("Abstract: " if EN else "摘  要：", pdf_safe(render_text(CONTENT["intro"])), "Hei", 9, 9, 0, 0)
+        abs_block("Abstract: " if EN else "摘  要：", pdf_safe(render_text(CONTENT["intro"])), "TimesB" if EN else "Hei", 9, 9, 0, 0)
     if CONTENT.get("keywords"):
-        abs_block("Keywords: " if EN else "关键词：", CONTENT["keywords"], "Hei", 9, 9, 0, 0)
+        abs_block("Keywords: " if EN else "关键词：", CONTENT["keywords"], "TimesB" if EN else "Hei", 9, 9, 0, 0)
     if not EN and CONTENT.get("title_en"):
         pdf.ln(2)
         pdf.set_font("TimesB", size=14)
@@ -1011,7 +1017,7 @@ def build_pdf(ref_keys):
 
     def section(title, sec_no):
         pdf.ln(2.5)
-        set_font("Song", 14, (15, 15, 15))
+        set_font("TimesB" if EN else "Song", 14, (15, 15, 15))
         label = f"{sec_no}  {title}" if sec_no else title
         pdf.multi_cell(0, 7.6, label, align="L")
         pdf.set_x(LM)
@@ -1019,7 +1025,7 @@ def build_pdf(ref_keys):
 
     def sub(title, sec_no, sub_no):
         pdf.ln(1.2)
-        set_font("Hei", 10.5, (20, 20, 20))
+        set_font("TimesB" if EN else "Hei", 10.5, (20, 20, 20))
         pdf.multi_cell(0, 5.6, f"{sec_no}.{sub_no}  {title}", align="L")
         pdf.set_x(LM)
         pdf.ln(0.8)
@@ -1027,7 +1033,7 @@ def build_pdf(ref_keys):
     def item(text, bullet=False):
         lh = 5.6
         indent = 7.4  # two full-width characters at 10.5 pt
-        set_font("Song", 10.5, (25, 25, 25))
+        set_font("TimesR" if EN else "Song", 10.5, (25, 25, 25))
         lines = wrap_text(pdf, text, PAGE_W - indent)
         y = pdf.get_y()
         if y + len(lines) * lh > Y_BOTTOM:
@@ -1059,7 +1065,7 @@ def build_pdf(ref_keys):
 
     # ---- References (SimSun 7.5 pt, alphabetical) ----
     section("References" if EN else "参考文献", "")
-    set_font("Song", 7.5, (25, 25, 25))
+    set_font("TimesR" if EN else "Song", 7.5, (25, 25, 25))
     hang = 5.3   # two full-width characters at 7.5 pt
     lh = 3.9
     for key in sorted(ref_keys, key=ref_sort_key):
