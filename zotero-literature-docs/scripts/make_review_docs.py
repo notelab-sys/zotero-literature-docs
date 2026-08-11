@@ -205,8 +205,9 @@ def cite_str(key):
         return str(key)
     authors = author_list(e.get("author", ""))
     year = e.get("year", "")
+    sep = ", " if EN else "，"
     if not authors:
-        return f"佚名，{year}" if year else "佚名"
+        return (f"Anonymous, {year}" if year else "Anonymous") if EN else (f"佚名，{year}" if year else "佚名")
     first = surname(authors[0])
     if len(authors) == 1:
         s = first
@@ -214,12 +215,14 @@ def cite_str(key):
         s = f"{first} & {surname(authors[1])}"
     else:
         s = f"{first} et al."
-    return f"{s}，{year}" if year else s
+    return f"{s}{sep}{year}" if year else s
 
 
 def render_text(text, by_key=None):
     def repl(m):
         keys = CITE_RE.findall(m.group(0))
+        if EN:
+            return "(" + "; ".join(cite_str(k) for k in keys) + ")"
         return "（" + "；".join(cite_str(k) for k in keys) + "）"
     return CITE_RUN.sub(repl, text)
 
@@ -253,7 +256,8 @@ def ref_text(key):
     if not e:
         return ""
     authors = [initials_name(a) for a in author_list(e.get("author", ""))]
-    head = "，".join(authors)
+    sep_a = ", " if EN else "，"
+    head = sep_a.join(authors)
     year = str(e.get("year", ""))
     line = head + "."
     if year:
@@ -266,15 +270,15 @@ def ref_text(key):
         num = e.get("number", "")
         pages = e.get("pages", "")
         if vol:
-            loc += f"，{vol}"
+            loc += (f", {vol}" if EN else f"，{vol}")
             if num:
-                loc += f" ({num})"
+                loc += (f"({num})" if EN else f" ({num})")
             if pages:
-                loc += f"：{pages.replace('-', '–')}"
+                loc += (f": {pages.replace('-', '–')}" if EN else f"：{pages.replace('-', '–')}")
         line += f" {loc}."
     doi = e.get("doi", "")
     if doi:
-        line += f" DOI：{doi}."
+        line += (f" DOI: {doi}." if EN else f" DOI：{doi}.")
     return line
 
 
@@ -499,11 +503,17 @@ def add_page_number(doc):
         r.font.size = Pt(9)
         set_east_asia(r)
 
-    txt("第 ")
-    field("PAGE")
-    txt(" 页 / 共 ")
-    field("NUMPAGES")
-    txt(" 页")
+    if EN:
+        txt("Page ")
+        field("PAGE")
+        txt(" of ")
+        field("NUMPAGES")
+    else:
+        txt("第 ")
+        field("PAGE")
+        txt(" 页 / 共 ")
+        field("NUMPAGES")
+        txt(" 页")
 
 
 # --------------------------------------------------------------------------
@@ -645,9 +655,9 @@ def build_docx(ref_keys):
             r.add_break()
     add_para(doc, CONTENT["subtitle"], size=9, color=GRAY, align=WD_ALIGN_PARAGRAPH.CENTER, after=8)
     if CONTENT.get("intro"):
-        add_para(doc, ("Abstract：" if EN else "摘  要：") + render_text(CONTENT["intro"]), size=10.5, after=6, italics=True)
+        add_para(doc, ("Abstract: " if EN else "摘  要：") + render_text(CONTENT["intro"]), size=10.5, after=6, italics=True)
     if CONTENT.get("keywords"):
-        add_para(doc, ("Keywords：" if EN else "关键词：") + CONTENT["keywords"], size=9, color=GRAY, after=8)
+        add_para(doc, ("Keywords: " if EN else "关键词：") + CONTENT["keywords"], size=9, color=GRAY, after=8)
     if not EN and CONTENT.get("title_en"):
         add_para(doc, CONTENT["title_en"], size=14, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, after=4)
     if not EN and CONTENT.get("abstract_en"):
@@ -712,7 +722,10 @@ class ReviewPDF(FPDF):
         self.set_y(-13)
         self.set_font("Song", size=7.5)
         self.set_text_color(120, 125, 130)
-        self.cell(0, 8, f"第 {self.page_no()} 页 / 共 {{nb}} 页", align="C")
+        if EN:
+            self.cell(0, 8, f"Page {self.page_no()} of {{nb}}", align="C")
+        else:
+            self.cell(0, 8, f"第 {self.page_no()} 页 / 共 {{nb}} 页", align="C")
 
 
 def wrap_text(pdf, text, width_mm):
@@ -980,9 +993,9 @@ def build_pdf(ref_keys):
         pdf.ln(1.2)
 
     if CONTENT.get("intro"):
-        abs_block("Abstract：" if EN else "摘  要：", pdf_safe(render_text(CONTENT["intro"])), "Hei", 9, 9, 0, 0)
+        abs_block("Abstract: " if EN else "摘  要：", pdf_safe(render_text(CONTENT["intro"])), "Hei", 9, 9, 0, 0)
     if CONTENT.get("keywords"):
-        abs_block("Keywords：" if EN else "关键词：", CONTENT["keywords"], "Hei", 9, 9, 0, 0)
+        abs_block("Keywords: " if EN else "关键词：", CONTENT["keywords"], "Hei", 9, 9, 0, 0)
     if not EN and CONTENT.get("title_en"):
         pdf.ln(2)
         pdf.set_font("TimesB", size=14)
