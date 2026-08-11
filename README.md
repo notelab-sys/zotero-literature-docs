@@ -2,7 +2,7 @@
 
 一个面向本地 Zotero 文献库的 Codex Skill：**检索 → 分析 → 综述 → 一键产出 Word + PDF + PPT 三件套**。
 
-从 Zotero 本地 API 读取干净数据，生成符合中文期刊排版规范的 Word、PDF 和 PPT 文件，并从文献 PDF 中裁剪**真实插图**，装配成带「图片引自参考文献 [n]」标注的汇报 PPT。所有产物自动校验（重开校验 + 乱码扫描 + PowerPoint 打开并导出 PDF 预览）。
+从 Zotero 本地 API 读取干净数据，生成符合中、英文期刊排版规范的 Word、PDF 和 PPT 文件，并从文献 PDF 中裁剪**真实插图**，装配成带「图片引自参考文献 [n]」标注的汇报 PPT。所有产物自动校验（重开校验 + 乱码扫描 + PowerPoint 打开并导出 PDF 预览）。
 
 > [English](README.en.md) | 中文
 
