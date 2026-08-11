@@ -63,6 +63,7 @@ zotero-literature-docs/
 ├── SKILL.md                        # Skill definition (entry point for Codex)
 ├── agents/openai.yaml              # trigger & behavior config
 ├── references/method.md            # full method, dependencies and pitfalls (Chinese)
+├── references/method.en.md         # full method, dependencies and pitfalls (English)
 ├── scripts/                        # pipeline scripts (unified CLI: zotero_docs.py)
 │   ├── zotero_docs.py              # setup/status/search/fetch/texts/review/figs/ppt
 │   ├── fetch_items.py              # data fetch & cleaning

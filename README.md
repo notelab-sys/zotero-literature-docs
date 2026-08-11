@@ -62,7 +62,8 @@ python work/zotero_docs.py ppt work/deck_config.json
 zotero-literature-docs/
 ├── SKILL.md                        # Skill 定义（Codex 读取入口）
 ├── agents/openai.yaml              # 触发与行为配置
-├── references/method.md            # 完整方法、依赖与踩坑记录
+├── references/method.md            # 完整方法、依赖与踩坑记录（中文）
+├── references/method.en.md         # 完整方法、依赖与踩坑记录（英文版）
 ├── scripts/                        # 流水线脚本（统一 CLI：zotero_docs.py）
 │   ├── zotero_docs.py              # setup/status/search/fetch/texts/review/figs/ppt
 │   ├── fetch_items.py              # 数据拉取与清洗
