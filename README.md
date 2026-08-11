@@ -79,7 +79,7 @@ zotero-literature-docs/
 
 - 方式一：将本仓库的 `zotero-literature-docs` 目录复制到 `~/.codex/skills/`，重启 Codex
 - 方式二：通过 Codex 技能安装器从本仓库安装
-- 使用：新建会话直接描述任务即可自动触发，例如「把 Zotero 里关于测试主题的文献整理成综述，并生成 Word / PDF / PPT」
+- 使用：新建会话直接描述任务即可自动触发，例如「把Zotero 里关于***(关键词)的文献整理成综述，并生成 Word / PDF / PPT」
 
 ## 注意事项
 

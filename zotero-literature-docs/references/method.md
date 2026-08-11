@@ -67,7 +67,7 @@
 
 ## 更新（2026-08-05）：体验改进
 
-根据一次完整实战（花青素综述 + MBW 专题 + 两套 PPT）的复盘，做了以下改进：
+根据一次完整实战（主题1 + 主题2 + 两套 PPT）的复盘，做了以下改进：
 
 1. **统一命令行入口**：新增 `scripts/zotero_docs.py`，支持
    `setup / status / search / fetch / texts / review / figs / ppt` 子命令，

@@ -25,7 +25,7 @@
 
 - 方式一（推荐）：Codex 技能安装器，输入本仓库路径一键安装
 - 方式二：手动复制 `zotero-literature-docs` 目录到 `~/.codex/skills/`，重启 Codex
-- 使用：新建会话直接描述任务即可触发，例如「把 Zotero 里关于测试主题的文献整理成综述并出 Word / PDF / PPT」
+- 使用：新建会话直接描述任务即可触发，例如「把Zotero 里关于***(关键词)的文献整理成综述并出 Word / PDF / PPT」
 
 ## 维护约定
 

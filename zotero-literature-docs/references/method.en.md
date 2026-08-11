@@ -51,7 +51,7 @@ User-specified (saved): from now on, literature documents' **Word and PDF are al
 
 ## Update (2026-08-05): usability improvements
 
-Based on a full run (anthocyanin review + MBW topic + two decks), the following improvements were made:
+Based on a full run (topic 1 + topic 2 + two decks), the following improvements were made:
 
 1. **Unified CLI**: new `scripts/zotero_docs.py` with `setup / status / search / fetch / texts / review / figs / ppt` subcommands; run from the project root. The first run automatically copies the pipeline scripts and skeleton into `work/`.
 2. **Cropped real figures**: `extract_figures.py` now crops embedded raster figures by their bounding boxes (`<KEY>_f1.png`) instead of whole-page screenshots; `--whole-page` remains as an explicit opt-in mode. Keys are passed via CLI or `--keys-file`, no longer hard-coded.

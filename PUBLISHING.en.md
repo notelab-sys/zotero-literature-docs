@@ -25,7 +25,7 @@ Current status: the repository is **Private**. This document is the preparation 
 
 - Option 1 (recommended): Codex skill installer with this repository path
 - Option 2: manually copy the `zotero-literature-docs` directory to `~/.codex/skills/` and restart Codex
-- Usage: describe the task in a new chat, e.g. "Compile the papers on the test topic in my Zotero library into a review and produce Word / PDF / PPT"
+- Usage: describe the task in a new chat, e.g. "Compile the papers about ***(keywords) in my Zotero library into a review and produce Word / PDF / PPT"
 
 ## Maintenance conventions
 
