@@ -1,4 +1,4 @@
----
+﻿---
 name: zotero-literature-docs
 description: Generate literature documents from a local Zotero library — curated Word (.docx) lists, matching PDFs, review documents, and illustrated PowerPoint decks with figures cited from the library. Use when the user asks to search or review their Zotero library and produce Word/PDF/PPT deliverables (e.g., "把检索到的文献整理成 Word 和 PDF", "按提纲生成 PPT", "做一份文献综述并出文档").
 ---
@@ -65,9 +65,9 @@ python work/zotero_docs.py ppt work/deck_config.json
    - errors loudly if a cited `[@KEY]` is missing from `data.json`;
    - warns about fetched items that were never cited;
    - renders in-text citations in author-year style （Zhang et al.，2015）;
-   - appends an alphabetically sorted reference list in 园艺学报 format.
+   - appends an alphabetically sorted reference list in Chinese journal format.
    Outputs: `outputs/<output>.docx` and `.pdf`, both garble-scanned.
-   The PDF follows 园艺学报 typography (SimSun/SimHei, sizes, line spacing,
+   The PDF follows Chinese journal typography (SimSun/SimHei, sizes, line spacing,
    numbered headings, first-line indents). Optional `keywords`, `table`
    (caption + columns + rows) and `image` (path + caption) fields in the
    content JSON are rendered with the journal's caption style.
@@ -116,7 +116,7 @@ python work/zotero_docs.py ppt work/deck_config.json
   alphabetical by first author in the format 作者. 年份. 标题. 期刊，卷(期)：页码.
   English titles use sentence case; gene names and Latin binomials are italic,
   naming authorities (e.g. Linden.) stay regular with a capital initial.
-- Review PDFs follow 园艺学报 typography (SimSun/SimHei/Times, numbered headings,
+- Review PDFs follow Chinese journal typography (SimSun/SimHei/Times, numbered headings,
   first-line indents, three-line tables, page-break control); Word matches the
   PDF for fonts, page numbers and table pagination.
 - In Word, gene symbols and Latin binomials are italic; protein/enzyme

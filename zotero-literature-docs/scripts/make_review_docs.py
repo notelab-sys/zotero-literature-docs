@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Generate a literature review (Word + PDF) from review_content.json.
 
-Layout follows the style of Acta Horticulturae Sinica (园艺学报):
+Layout follows the style of a Chinese academic journal:
 - In-text citations are author-year style: （Zhang et al.，2015）.
 - The reference list is alphabetical by first author.
 - PDF uses SimSun (body) / SimHei (title & level-2 headings) with the
@@ -171,7 +171,7 @@ PLANT_GENERA = {
 
 
 # --------------------------------------------------------------------------
-# Citation / reference helpers (author-year, 园艺学报 style)
+# Citation / reference helpers (author-year, Chinese journal style)
 # --------------------------------------------------------------------------
 
 def clean_title(title):
@@ -710,7 +710,7 @@ def build_docx(ref_keys):
 
 
 # --------------------------------------------------------------------------
-# PDF (园艺学报 style)
+# PDF (Chinese journal style)
 # --------------------------------------------------------------------------
 
 def png_size(path):

@@ -4,7 +4,7 @@
 
 A Codex Skill for your **local Zotero library**: **search → analyze → review → one-click Word + PDF + PPT deliverables**.
 
-It reads clean data from the Zotero local API, produces review documents (Word + PDF) formatted to Chinese horticulture journal (园艺学报) conventions, crops **real figures** from the paper PDFs, and assembles an illustrated PPT with "Figure from reference [n]" captions. Every output is auto-validated (re-open check + garble scan + PowerPoint open with PDF preview export).
+It reads clean data from the Zotero local API, produces review documents (Word + PDF) formatted to standard Chinese academic journal conventions, crops **real figures** from the paper PDFs, and assembles an illustrated PPT with "Figure from reference [n]" captions. Every output is auto-validated (re-open check + garble scan + PowerPoint open with PDF preview export).
 
 ## Features
 

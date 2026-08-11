@@ -8,7 +8,7 @@ Current status: the repository is **Private**. This document is the preparation 
 
 - Positioning: search → analyze → review a **local Zotero library** and generate **Word + PDF + PPT deliverables** in one pipeline
 - Differentiators: one pipeline producing all three deliverables; PPT uses **real figures cropped from the paper PDFs** with "Figure from reference [n]" captions; all outputs are auto-validated
-- Target users: Chinese-speaking researchers (plant science / horticulture), with output formatted to Chinese horticulture journal (园艺学报) conventions
+- Target users: Chinese-speaking researchers (plant science / horticulture), with output formatted to standard Chinese academic journal conventions
 - Compatibility: Windows + Codex (desktop / CLI); Python 3.10+; Zotero local API (port 23119)
 
 ## Pre-release checklist
