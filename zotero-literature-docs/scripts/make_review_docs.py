@@ -256,8 +256,7 @@ def ref_text(key):
     if not e:
         return ""
     authors = [initials_name(a) for a in author_list(e.get("author", ""))]
-    sep_a = ", " if EN else "，"
-    head = sep_a.join(authors)
+    head = ", ".join(authors)
     year = str(e.get("year", ""))
     line = head + "."
     if year:
@@ -270,15 +269,15 @@ def ref_text(key):
         num = e.get("number", "")
         pages = e.get("pages", "")
         if vol:
-            loc += (f", {vol}" if EN else f"，{vol}")
+            loc += f", {vol}"
             if num:
-                loc += (f"({num})" if EN else f" ({num})")
+                loc += f"({num})"
             if pages:
-                loc += (f": {pages.replace('-', '–')}" if EN else f"：{pages.replace('-', '–')}")
+                loc += f": {pages.replace('-', '–')}"
         line += f" {loc}."
     doi = e.get("doi", "")
     if doi:
-        line += (f" DOI: {doi}." if EN else f" DOI：{doi}.")
+        line += f" DOI: {doi}."
     return line
 
 
