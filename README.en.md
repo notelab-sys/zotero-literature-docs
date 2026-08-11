@@ -79,7 +79,7 @@ zotero-literature-docs/
 
 - Option 1: copy the `zotero-literature-docs` directory to `~/.codex/skills/` and restart Codex
 - Option 2: install from this repository via the Codex skill installer
-- Usage: describe the task in a new chat and the skill triggers automatically, e.g. "Compile the anthocyanin papers in my Zotero library into a review and produce Word / PDF / PPT"
+- Usage: describe the task in a new chat and the skill triggers automatically, e.g. "Compile the papers on the test topic in my Zotero library into a review and produce Word / PDF / PPT"
 
 ## Notes
 
