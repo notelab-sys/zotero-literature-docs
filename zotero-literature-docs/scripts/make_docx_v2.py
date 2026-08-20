@@ -56,7 +56,7 @@ def para(doc, size, color=BLACK, bold=False, align=None, after=6):
 def load_config():
     default_sections = [
         {"title": "一、综述与方法类", "keys": None},
-        {"title": "二、兰花（蝴蝶兰等）转化研究", "keys": None},
+        {"title": "二、植物转化研究", "keys": None},
     ]
     if CONFIG.exists():
         cfg = json.loads(CONFIG.read_text(encoding="utf-8"))

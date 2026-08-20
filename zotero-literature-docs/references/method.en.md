@@ -92,3 +92,28 @@ The following rules are now written into `make_review_docs.py` and the other scr
 
 1. **PDF Latin italics**: the PDF renders italic fragments (gene names, Latin binomials) with Times Italic (timesi.ttf) and Chinese/regular fragments with SimSun; Word implements run-level italics. Both share the same `italic_spans` rules, so Word and PDF stay consistent (the English abstract also applies the italics rules).
 2. **Reference titles**: English titles use sentence case (lowercase in the middle); fully capitalized abbreviations/gene names keep capitals; full gene names (e.g. AUXIN RESPONSE FACTOR) are capitalized and italic; binomial genus and species names are italic, while naming authorities (e.g. Linden., Pierre ex A. Froehner) keep a capital initial and regular type; author names are regular with capital initials.
+
+## Update (2026-08-17): PPT numbering / reference format / English front matter
+
+1. **PPT bullets**: `build_pptx.py` text slides now use bullets instead of auto
+   numbers — • for Chinese decks, * for English decks — so bullet numbers never
+   clash with heading numbers.
+2. **PPT heading numbering**: Chinese decks use 一、二、三… for level-1 headings and
+   restart level-2 numbering at 1、2、3… within each section; English decks use
+   1、2、3… for level-1 and 1.1、1.2…2.1、2.2… for level-2 (titles are written
+   directly in deck_config).
+3. **PPT reference list**: format "Author, Year. Title. Journal, vol(issue): pages."
+   (no 《》 and no [n] prefix), sorted by first-author surname; English titles use
+   sentence case; all-caps gene names (AUXIN RESPONSE FACTOR3, AUXIN RESPONSE
+   FACTOR 5) stay all caps and italic; gene names and Latin binomials are italic.
+4. **Rich-text italics in PPT**: `fmt_paragraph` gained a `spans` parameter
+   (per-run rendering with i="1" for italics); new `italic_spans()` (wordlists
+   PPT_ITALIC/PPT_GENERA/PPT_PROPER) and `en_scase()` (sentence case, preserving
+   italic spans and proper nouns such as Orchidaceae).
+5. **English front matter in Chinese documents**: `review_content.json` supports
+   `title_en` (bold English title), `abstract_en`, `keywords_en`; the Word
+   Abstract/Keywords labels are bold (`add_labeled_para`), the PDF labels use
+   TimesB and the English title is centered.
+6. **Multi-citation order**: consecutive citations in one parenthesis are ordered
+   by publication year (ascending; same-year by first-author surname); write the
+   citation tokens in that order in review_content.json.

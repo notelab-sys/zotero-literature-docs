@@ -11,7 +11,7 @@ Usage:
 
 Deck config schema:
 {
-  "output": "植物花青素合成与调控研究进展综述",
+  "output": "植物代谢与调控研究进展综述",
   "review_content": "review_content.json",
   "slides": [
     {"type": "cover", "title": "...", "subtitle": "...", "note1": "...", "note2": "..."},
@@ -90,7 +90,24 @@ def short_author(author):
     if not author:
         return ""
     first = author.split(",")[0].strip()
-    return first + " 等" if (author.count(",") > 0 or "  " in author) else first
+    multi = author.count(",") > 0 or "  " in author
+    if EN:
+        return first + " et al." if multi else first
+    return first + " 等" if multi else first
+
+
+def surname_of(name):
+    """Author display name: Chinese (CJK) names keep the full name; Latin /
+    pinyin names are reduced to the surname (last token)."""
+    name = (name or "").strip()
+    if not name:
+        return name
+    if re.search(r"[\u4e00-\u9fff]", name):
+        return name
+    parts = name.split()
+    if len(parts) > 1:
+        return parts[-1]
+    return name
 
 
 def load_data():
@@ -101,20 +118,120 @@ REFNO = ref_numbers(REVIEW_CONTENT)
 DATA = load_data()
 
 
-def fmt_paragraph(text, size=1500, bold=False, color="333333", bullet=False, align="l", spacing=280):
+PPT_ITALIC = {
+    "ARF", "ARF1", "ARF2", "ARF3", "ARF4", "ARF5", "ARF6", "ARF7", "ARF8",
+    "ARF9", "ARF10", "ARF11", "ARF16", "ARF17", "ARF18", "ARF19", "ARF23",
+    "SlARF2", "SlARF5", "SlARF7", "SlARF8", "SlARF9",
+    "MONOPTEROS", "ETTIN", "TIR1", "AFB", "TPL", "TPR", "Aux/IAA",
+    "IAA7", "IAA12", "IPT3", "IPT5", "IPT7", "LOG", "AHK4",
+    "ARR5", "ARR7", "ARR15", "CLV3", "WUS", "WOX", "AG", "AP2", "LFY",
+    "RhARF1", "RhARF8", "RhCHSa", "RhCHSc", "RhCHSa/c", "LCR", "miR394",
+    "AUXIN RESPONSE FACTOR", "AUXIN RESPONSE FACTOR3", "AUXIN RESPONSE FACTOR 5",
+}
+PPT_GENERA = {
+    "Arabidopsis", "Phalaenopsis", "Apostasia", "Dendrobium", "Vanilla",
+    "Rosa", "Oryza", "Nicotiana", "Solanum", "Vitis", "Malus", "Prunus",
+    "Citrus", "Triticum", "Zea", "Glycine", "Medicago", "Osmanthus",
+    "Petunia", "Picea", "Pinus", "Gossypium", "Brassica", "Fragaria",
+    "Vaccinium",
+}
+PPT_PROPER = {"Orchidaceae"}
+
+
+def _merge_spans(spans):
+    spans = sorted(set(spans))
+    merged = []
+    for s, e in spans:
+        if merged and s <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            merged.append((s, e))
+    return merged
+
+
+def italic_spans(text):
+    """Return merged (start, end) spans of gene names / Latin binomials."""
+    spans = []
+    for w in sorted(PPT_ITALIC, key=len, reverse=True):
+        for m in re.finditer(r"(?<![A-Za-z0-9])" + re.escape(w) + r"(?![A-Za-z0-9])", text):
+            spans.append((m.start(), m.end()))
+    for g in PPT_GENERA:
+        for m in re.finditer(r"\b" + g + r"\s+[a-z]{3,}\b", text):
+            spans.append((m.start(), m.end()))
+        for m in re.finditer(r"\b" + g + r"\b(?!\s+[a-z]{3,})", text):
+            spans.append((m.start(), m.end()))
+    for m in re.finditer(r"\b[A-Z]\.\s+[a-z]{3,}\b", text):
+        spans.append((m.start(), m.end()))
+    return _merge_spans(spans)
+
+
+def en_scase(text, spans):
+    """Sentence-case an English title, keeping italic spans and proper nouns."""
+    def seg_case(seg, first):
+        def repl(m):
+            w = m.group(0)
+            if w in PPT_PROPER:
+                return w
+            if not first[0]:
+                first[0] = True
+                return w[:1].upper() + w[1:].lower()
+            return w.lower()
+        return re.sub(r"[A-Za-z]+(?:['\u2019-][A-Za-z]+)*", repl, seg)
+
+    out = []
+    pos = 0
+    first = [False]
+    for s, e in spans:
+        seg = text[pos:s]
+        if seg:
+            out.append(seg_case(seg, first))
+            if re.search(r"[A-Za-z0-9]", seg):
+                first[0] = True
+        out.append(text[s:e])
+        first[0] = True
+        pos = e
+    seg = text[pos:]
+    if seg:
+        out.append(seg_case(seg, first))
+    return "".join(out)
+
+
+def fmt_paragraph(text, size=1500, bold=False, color="333333", bullet=False, align="l", spacing=280,
+                  numbered=False, ls=130, spans=None):
+    """Return one paragraph XML (PPT format per SOP section 7, 2026-08-14)."""
     align = "ctr" if align == "c" else align
-    rpr = [f"<a:rPr lang=\"zh-CN\" sz=\"{size}\" b=\"{1 if bold else 0}\" dirty=\"0\">",
-           "<a:latin typeface=\"Calibri\"/><a:ea typeface=\"Microsoft YaHei\"/>",
-           f"<a:solidFill><a:srgbClr val=\"{color}\"/></a:solidFill></a:rPr>"]
+
+    def rpr(i=0):
+        return [f"<a:rPr lang=\"zh-CN\" sz=\"{size}\" b=\"{1 if bold else 0}\" i=\"{i}\" dirty=\"0\">",
+                "<a:latin typeface=\"Times New Roman\"/><a:ea typeface=\"SimSun\"/>",
+                f"<a:solidFill><a:srgbClr val=\"{color}\"/></a:solidFill></a:rPr>"]
+
     ppr = [f"<a:pPr algn=\"{align}\" marL=\"228600\" indent=\"-228600\">",
-           "<a:lnSpc><a:spcPct val=\"130000\"/></a:lnSpc>",
+           f"<a:lnSpc><a:spcPct val=\"{ls}000\"/></a:lnSpc>",
            f"<a:spcBef><a:spcPts val=\"{spacing // 100}\"/></a:spcBef>"]
-    if bullet:
-        ppr.append("<a:buFont typeface=\"Arial\"/><a:buChar char=\"•\"/>")
+    if numbered:
+        ppr.append("<a:buFont typeface=\"Times New Roman\"/><a:buAutoNum type=\"arabicPeriod\"/>")
+    elif bullet:
+        char = "*" if EN else "•"
+        ppr.append(f"<a:buFont typeface=\"Arial\"/><a:buChar char=\"{char}\"/>")
     else:
         ppr.append("<a:buNone/>")
     ppr.append("</a:pPr>")
-    return "<a:p>" + "".join(ppr) + "<a:r>" + "".join(rpr) + f"<a:t>{escape(text)}</a:t></a:r></a:p>"
+    if spans:
+        runs = []
+        pos = 0
+        for s, e in spans:
+            if s > pos:
+                runs.append((text[pos:s], 0))
+            runs.append((text[s:e], 1))
+            pos = e
+        if pos < len(text):
+            runs.append((text[pos:], 0))
+        body = "".join("<a:r>" + "".join(rpr(i)) + f"<a:t>{escape(t)}</a:t></a:r>"
+                       for t, i in runs)
+    else:
+        body = "<a:r>" + "".join(rpr(0)) + f"<a:t>{escape(text)}</a:t></a:r>"
+    return "<a:p>" + "".join(ppr) + body + "</a:p>"
 
 
 def sp_text(x, y, cx, cy, paragraphs, sid=2):
@@ -161,9 +278,11 @@ def pic_slide(spec):
     img_no = spec.get("fig", 1)
     caption_key = spec.get("caption_key", img_key)
     img = IMG_DIR / f"{img_key}_f{img_no}.png"
-    title_paras = [fmt_paragraph(title, size=3000 if subtitle else 3200, bold=True, color=DARK)]
+    title_paras = [fmt_paragraph(title, size=3000 if subtitle else 3200, bold=True, color=DARK,
+                                 spans=italic_spans(title))]
     if subtitle:
-        title_paras.append(fmt_paragraph(subtitle, size=2000, bold=False, color="2E75B6", spacing=120))
+        title_paras.append(fmt_paragraph(subtitle, size=2000, bold=False, color="2E75B6", spacing=120,
+                                         spans=italic_spans(subtitle)))
     shapes = [sp_rect(0, 0, SLIDE_W, SLIDE_H, BG, sid=2),
               sp_rect(0, 0, SLIDE_W, TITLE_H, BAR, sid=3),
               sp_text(MARGIN, 100000, SLIDE_W - 2 * MARGIN, 900000, title_paras, sid=4)]
@@ -177,8 +296,14 @@ def pic_slide(spec):
         dw, dh = int(iw * scale), int(ih * scale)
         ix, iy = bx + (box_w - dw) // 2, by + (box_h - dh) // 2
         shapes.append(sp_pic(ix, iy, dw, dh, "rId2", sid=5))
-        cap = [fmt_paragraph(caption_for(caption_key), size=1100, color="5A6B7B", align="c", spacing=40)]
-        shapes.append(sp_text(MARGIN, by + box_h + 80000, SLIDE_W - 2 * MARGIN, 500000, cap, sid=6))
+        cap = caption_for(caption_key)
+        cap_paras = [fmt_paragraph(cap, size=1600, bold=True, color="404040", align="c", spacing=40,
+                                   spans=italic_spans(cap))]
+        src = spec.get("source")
+        if src:
+            cap_paras.append(fmt_paragraph(src, size=1100, color="595959", align="c", spacing=20,
+                                           spans=italic_spans(src)))
+        shapes.append(sp_text(MARGIN, by + box_h + 80000, SLIDE_W - 2 * MARGIN, 600000, cap_paras, sid=6))
     return slide_xml(shapes), img_path
 
 
@@ -186,10 +311,13 @@ def text_slide(spec):
     title = spec.get("title", "")
     subtitle = spec.get("subtitle")
     lines = spec.get("lines", [])
-    title_paras = [fmt_paragraph(title, size=3000 if subtitle else 3200, bold=True, color=DARK)]
+    title_paras = [fmt_paragraph(title, size=3000 if subtitle else 3200, bold=True, color=DARK,
+                                 spans=italic_spans(title))]
     if subtitle:
-        title_paras.append(fmt_paragraph(subtitle, size=2000, bold=False, color="2E75B6", spacing=120))
-    bullet_paras = [fmt_paragraph(b, size=1700, bullet=True, spacing=700) for b in lines]
+        title_paras.append(fmt_paragraph(subtitle, size=2000, bold=False, color="2E75B6", spacing=120,
+                                         spans=italic_spans(subtitle)))
+    bullet_paras = [fmt_paragraph(b, size=2000, bold=True, bullet=True, spacing=700, ls=150,
+                                  spans=italic_spans(b)) for b in lines]
     shapes = [sp_rect(0, 0, SLIDE_W, SLIDE_H, BG, sid=2),
               sp_rect(0, 0, SLIDE_W, TITLE_H, BAR, sid=3),
               sp_text(MARGIN, 100000, SLIDE_W - 2 * MARGIN, 900000, title_paras, sid=4),
@@ -198,12 +326,16 @@ def text_slide(spec):
 
 
 def cover_slide(spec):
+    title_t = spec.get("title", "")
+    subtitle_t = spec.get("subtitle", "")
     shapes = [sp_rect(0, 0, SLIDE_W, SLIDE_H, BG, sid=2),
               sp_rect(0, SLIDE_H - 140000, SLIDE_W, 140000, DARK, sid=3),
               sp_text(900000, 1600000, SLIDE_W - 1800000, 1700000,
-                      [fmt_paragraph(spec.get("title", ""), size=4000, bold=True, color=DARK, align="c")], sid=4),
+                      [fmt_paragraph(title_t, size=4000, bold=True, color=DARK, align="c",
+                                     spans=italic_spans(title_t))], sid=4),
               sp_text(900000, 3350000, SLIDE_W - 1800000, 700000,
-                      [fmt_paragraph(spec.get("subtitle", ""), size=2200, color="2E75B6", align="c")], sid=5),
+                      [fmt_paragraph(subtitle_t, size=2200, color="2E75B6", align="c",
+                                     spans=italic_spans(subtitle_t))], sid=5),
               sp_text(900000, 4300000, SLIDE_W - 1800000, 900000,
                       [fmt_paragraph(spec.get("note1", ""), size=1600, color="44546A", align="c"),
                        fmt_paragraph(spec.get("note2", ""), size=1400, color="44546A", align="c")], sid=6)]
@@ -211,7 +343,8 @@ def cover_slide(spec):
 
 
 def toc_slide(spec):
-    paras = [fmt_paragraph(it, size=2000, bullet=False, spacing=800) for it in spec.get("items", [])]
+    paras = [fmt_paragraph(it, size=2000, bullet=False, spacing=800, spans=italic_spans(it))
+             for it in spec.get("items", [])]
     title = spec.get("title") or ("Contents" if EN else "目录")
     shapes = [sp_rect(0, 0, SLIDE_W, SLIDE_H, BG, sid=2),
               sp_rect(0, 0, SLIDE_W, TITLE_H, BAR, sid=3),
@@ -224,15 +357,31 @@ def toc_slide(spec):
 def refs_slide(spec):
     count = spec.get("count", 10)
     title = spec.get("title") or ("References" if EN else "参考文献")
-    refs_list = sorted(REFNO.items(), key=lambda kv: kv[1])[:count]
+    def ref_sort(kv):
+        e = DATA.get(kv[0], {})
+        first = (e.get("author") or "").split(",")[0].strip()
+        return (surname_of(first).lower(), int(e.get("year") or 0))
+    refs_list = sorted(REFNO.items(), key=ref_sort)[:count]
     paras = []
     for key, n in refs_list:
         e = DATA.get(key, {})
-        if EN:
-            text = f"[{n}] {short_author(e.get('author', ''))} ({e.get('year', '')}) {clean_title(e.get('title', ''))}"
-        else:
-            text = f"[{n}] {short_author(e.get('author', ''))}（{e.get('year', '')}）《{clean_title(e.get('title', ''))}》"
-        paras.append(fmt_paragraph(text, size=1350, color="333333", bullet=False, spacing=200))
+        j = e.get("journal", "")
+        v = e.get("volume", "")
+        num = e.get("number", "")
+        pg = e.get("pages", "")
+        vnp = ""
+        if v:
+            vnp = v + (f"({num})" if num else "") + (f": {pg}" if pg else "")
+        first = (e.get("author") or "").split(",")[0].strip()
+        multi = "," in (e.get("author") or "")
+        who = (surname_of(first) + " et al.") if multi else surname_of(first)
+        raw_title = clean_title(e.get("title", ""))
+        title_txt = en_scase(raw_title, italic_spans(raw_title))
+        lead = f"{who}, {e.get('year', '')}. "
+        tail = (" " + j + (f", {vnp}" if vnp else "")) if j else ""
+        full = f"{lead}{title_txt}.{tail}."
+        spans = [(s + len(lead), e + len(lead)) for s, e in italic_spans(title_txt)]
+        paras.append(fmt_paragraph(full, size=1350, color="333333", bullet=False, spacing=200, spans=spans))
     shapes = [sp_rect(0, 0, SLIDE_W, SLIDE_H, BG, sid=2),
               sp_rect(0, 0, SLIDE_W, TITLE_H, BAR, sid=3),
               sp_text(MARGIN, 200000, SLIDE_W - 2 * MARGIN, 700000,
@@ -246,10 +395,23 @@ def caption_for(key):
     e = DATA.get(key, {})
     author = short_author(e.get("author", ""))
     year = e.get("year", "")
-    title = clean_title(e.get("title", ""))
+    raw_title = clean_title(e.get("title", ""))
+    title = en_scase(raw_title, italic_spans(raw_title))
+
     if EN:
-        return f"Figure from reference [{n}]: {author} ({year}) {title}"
-    return f"图片引自参考文献[{n}]：{author}（{year}）《{title}》"
+        journal = e.get("journal", "")
+        first = (e.get("author") or "").split(",")[0].strip()
+        multi = "," in (e.get("author") or "")
+        who = (surname_of(first) + " et al.") if multi else surname_of(first)
+        return f"{title} ({who}, {year}, {journal})"
+    journal = e.get("journal", "")
+    first = (e.get("author") or "").split(",")[0].strip()
+    multi = "," in (e.get("author") or "")
+    if multi:
+        who = surname_of(first) + (" et al." if not re.search(r"[\u4e00-\u9fff]", first) else " 等")
+    else:
+        who = surname_of(first)
+    return f"{title}（{who}，{year}，{journal}）"
 
 
 def make_deck(config=None):
@@ -404,8 +566,8 @@ def theme_xml():
             "<a:hlink><a:srgbClr val=\"0563C1\"/></a:hlink><a:folHlink><a:srgbClr val=\"954F72\"/></a:folHlink>"
             "</a:clrScheme>"
             "<a:fontScheme name=\"Office\">"
-            "<a:majorFont><a:latin typeface=\"Calibri Light\"/><a:ea typeface=\"Microsoft YaHei\"/><a:cs typeface=\"\"/></a:majorFont>"
-            "<a:minorFont><a:latin typeface=\"Calibri\"/><a:ea typeface=\"Microsoft YaHei\"/><a:cs typeface=\"\"/></a:minorFont>"
+            "<a:majorFont><a:latin typeface=\"Times New Roman\"/><a:ea typeface=\"SimSun\"/><a:cs typeface=\"\"/></a:majorFont>"
+            "<a:minorFont><a:latin typeface=\"Times New Roman\"/><a:ea typeface=\"SimSun\"/><a:cs typeface=\"\"/></a:minorFont>"
             "</a:fontScheme>"
             "<a:fmtScheme name=\"Office\">"
             "<a:fillStyleLst><a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill>"
@@ -446,9 +608,9 @@ def master_xml():
             "<p:clrMap bg1=\"lt1\" tx1=\"dk1\" bg2=\"lt2\" tx2=\"dk2\" accent1=\"accent1\" accent2=\"accent2\" accent3=\"accent3\" accent4=\"accent4\" accent5=\"accent5\" accent6=\"accent6\" hlink=\"hlink\" folHlink=\"folHlink\"/>"
             "<p:sldLayoutIdLst><p:sldLayoutId id=\"2147483649\" r:id=\"rId1\"/></p:sldLayoutIdLst>"
             "<p:txStyles>"
-            "<p:titleStyle><a:lvl1pPr><a:defRPr sz=\"3200\"><a:latin typeface=\"Calibri Light\"/><a:ea typeface=\"Microsoft YaHei\"/></a:defRPr></a:lvl1pPr></p:titleStyle>"
-            "<p:bodyStyle><a:lvl1pPr><a:defRPr sz=\"1800\"><a:latin typeface=\"Calibri\"/><a:ea typeface=\"Microsoft YaHei\"/></a:defRPr></a:lvl1pPr></p:bodyStyle>"
-            "<p:otherStyle><a:lvl1pPr><a:defRPr sz=\"1200\"><a:latin typeface=\"Calibri\"/><a:ea typeface=\"Microsoft YaHei\"/></a:defRPr></a:lvl1pPr></p:otherStyle>"
+            "<p:titleStyle><a:lvl1pPr><a:defRPr sz=\"3200\"><a:latin typeface=\"Times New Roman\"/><a:ea typeface=\"SimSun\"/></a:defRPr></a:lvl1pPr></p:titleStyle>"
+            "<p:bodyStyle><a:lvl1pPr><a:defRPr sz=\"2000\"><a:latin typeface=\"Times New Roman\"/><a:ea typeface=\"SimSun\"/></a:defRPr></a:lvl1pPr></p:bodyStyle>"
+            "<p:otherStyle><a:lvl1pPr><a:defRPr sz=\"1200\"><a:latin typeface=\"Times New Roman\"/><a:ea typeface=\"SimSun\"/></a:defRPr></a:lvl1pPr></p:otherStyle>"
             "</p:txStyles>"
             "</p:sldMaster>")
 

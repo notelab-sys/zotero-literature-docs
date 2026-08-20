@@ -1,7 +1,7 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Generate a literature review (Word + PDF) from review_content.json.
 
-Layout follows the style of a Chinese academic journal:
+Layout follows the style of Acta Horticulturae Sinica (园艺学报):
 - In-text citations are author-year style: （Zhang et al.，2015）.
 - The reference list is alphabetical by first author.
 - PDF uses SimSun (body) / SimHei (title & level-2 headings) with the
@@ -106,6 +106,13 @@ ITALIC_WORDS = {
     "BABY BOOM", "LEAFY COTYLEDON1", "LEAFY COTYLEDON2", "FUSCA3",
     "ABSCISIC ACID INSENSITIVE3", "LEAF CURLING RESPONSIVENESS",
     "AUXIN RESPONSE FACTOR",
+    "WOX", "WOX5", "WOX11", "WOX14", "TaWOX5", "YAB1", "YABBY1", "SPCH",
+    "ATH1", "LBD19", "KdLBD19",
+    "ARF3", "ARF4", "ARF5", "ARF7", "ARF9", "ARF11", "ARF18", "ARF19",
+    "ARF23", "SlARF2", "SlARF5", "SlARF7", "SlARF8", "SlARF9",
+    "MONOPTEROS", "ETTIN", "TIR1", "AFB", "TPL", "TPR", "Aux/IAA",
+    "IAA7", "IAA12", "IPT3", "IPT5", "IPT7", "LOG", "AHK4",
+    "ARR5", "ARR7", "ARR15", "CLV3",
 }
 _BINOMIAL = r"\b[A-Z][a-z]{2,}(?:\s*[×x]\s*|\s+)[a-z]{3,}\b"
 _GENE_ALT = "|".join(r"\b" + re.escape(w) + r"\b"
@@ -171,7 +178,7 @@ PLANT_GENERA = {
 
 
 # --------------------------------------------------------------------------
-# Citation / reference helpers (author-year, Chinese journal style)
+# Citation / reference helpers (author-year, 园艺学报 style)
 # --------------------------------------------------------------------------
 
 def clean_title(title):
@@ -180,8 +187,13 @@ def clean_title(title):
 
 
 def surname(name):
-    parts = str(name).strip().split()
-    return parts[-1] if parts else ""
+    name = str(name or "").strip()
+    if re.search(r"[\u4e00-\u9fff]", name):
+        return name               # Chinese: keep the full name
+    parts = name.split()
+    if parts:
+        return parts[-1]
+    return ""
 
 
 def initials_name(name):
@@ -212,9 +224,13 @@ def cite_str(key):
     if len(authors) == 1:
         s = first
     elif len(authors) == 2:
-        s = f"{first} & {surname(authors[1])}"
+        s = f"{first} & {surname(authors[1])}" if EN else f"{first} 和 {surname(authors[1])}"
     else:
-        s = f"{first} et al."
+        # Chinese docs: Chinese first author -> 等; Western first author -> et al.
+        if EN or not re.search(r"[\u4e00-\u9fff]", first):
+            s = f"{first} et al."
+        else:
+            s = f"{first} 等"
     return f"{s}{sep}{year}" if year else s
 
 
@@ -273,7 +289,7 @@ def ref_text(key):
             if num:
                 loc += f"({num})"
             if pages:
-                loc += f": {pages.replace('-', '–')}"
+                loc += f": {pages}"
         line += f" {loc}."
     doi = e.get("doi", "")
     if doi:
@@ -416,6 +432,23 @@ def add_para(doc, text, size=11, color=None, bold=False, align=None, after=6,
     return p
 
 
+def add_labeled_para(doc, label, body, size=9, color=None, after=6):
+    """Paragraph with a bold label run followed by italicized body runs."""
+    p = doc.add_paragraph()
+    p.paragraph_format.space_after = Pt(after)
+    p.paragraph_format.line_spacing = 1.3
+    r = p.add_run(label)
+    r.font.size = Pt(size)
+    r.bold = True
+    if color:
+        r.font.color.rgb = color
+    set_east_asia(r)
+    add_italicized_runs(p, body, size=size, color=color)
+    if EN:
+        r.font.name = "Times New Roman"
+    return p
+
+
 def _add_run(p, text, size, color, bold, east, italic):
     if not text:
         return
@@ -463,7 +496,7 @@ def italic_spans(text):
     for m in _GENE_RE.finditer(text):
         if not _protein_or_enzyme(text, m.start(), m.end()):
             spans.append((m.start(), m.end()))
-    return spans
+    return sorted(spans)
 
 
 def _protein_or_enzyme(text, s, e):
@@ -652,8 +685,9 @@ def build_docx(ref_keys):
     for i, ln in enumerate(title_lines):
         r = tp.add_run(ln)
         r.font.size = Pt(20)
-        r.font.name = "SimHei"
-        set_east_asia(r, "SimHei")
+        r.font.name = "Times New Roman"
+        r.bold = True
+        set_east_asia(r, "Times New Roman" if EN else "SimHei")
         if i < len(title_lines) - 1:
             r.add_break()
     add_para(doc, CONTENT["subtitle"], size=9, color=GRAY, align=WD_ALIGN_PARAGRAPH.CENTER, after=8)
@@ -664,17 +698,16 @@ def build_docx(ref_keys):
     if not EN and CONTENT.get("title_en"):
         add_para(doc, CONTENT["title_en"], size=14, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, after=4)
     if not EN and CONTENT.get("abstract_en"):
-        p = add_para(doc, "Abstract：" + CONTENT["abstract_en"], size=9, color=GRAY,
-                     after=6, italics=True)
+        p = add_labeled_para(doc, "Abstract：", CONTENT["abstract_en"], size=9, color=GRAY, after=6)
         p.paragraph_format.first_line_indent = Pt(0)
     if not EN and CONTENT.get("keywords_en"):
-        add_para(doc, "Keywords：" + CONTENT["keywords_en"], size=9, color=GRAY, after=8)
+        add_labeled_para(doc, "Keywords：", CONTENT["keywords_en"], size=9, color=GRAY, after=8)
 
     sec_idx = 0
     for sec in CONTENT["sections"]:
         n, text = section_number(sec["heading"])
         sec_idx = n if n else sec_idx + 1
-        add_para(doc, f"{sec_idx}  {text}", size=14, after=5, east="SimSun")
+        add_para(doc, f"{sec_idx}  {text}", size=14, after=5, east="SimSun", bold=True)
         doc.paragraphs[-1].paragraph_format.space_before = Pt(10)
         sub_idx = 0
         for group in sec.get("groups", []):
@@ -685,11 +718,11 @@ def build_docx(ref_keys):
             if group.get("sub"):
                 sn, stext = sub_number(group["sub"])
                 sub_idx = sn if sn else sub_idx + 1
-                add_para(doc, f"{sec_idx}.{sub_idx}  {stext}", size=11, after=3, east="SimHei")
+                add_para(doc, f"{sec_idx}.{sub_idx}  {stext}", size=11, after=3, east="SimHei", bold=True)
             for item in group.get("items", []):
                 add_para(doc, render_text(item), size=10.5, after=3, indent=True, italics=True)
 
-    add_para(doc, "References" if EN else "参考文献", size=14, after=5, east="SimSun")
+    add_para(doc, "References" if EN else "参考文献", size=14, after=5, east="SimSun", bold=True)
     doc.paragraphs[-1].paragraph_format.space_before = Pt(12)
     for key in sorted(ref_keys, key=ref_sort_key):
         txt = ref_text(key)
@@ -710,7 +743,7 @@ def build_docx(ref_keys):
 
 
 # --------------------------------------------------------------------------
-# PDF (Chinese journal style)
+# PDF (园艺学报 style)
 # --------------------------------------------------------------------------
 
 def png_size(path):
@@ -732,6 +765,21 @@ class ReviewPDF(FPDF):
 
 
 def wrap_text(pdf, text, width_mm):
+    if EN:
+        # Word-boundary wrapping: never split a word across lines (EN only).
+        lines = []
+        for para in str(text).split("\n"):
+            cur = ""
+            for w in para.split(" "):
+                trial = w if not cur else cur + " " + w
+                if cur and pdf.get_string_width(trial) > width_mm:
+                    lines.append(cur)
+                    cur = w
+                else:
+                    cur = trial
+            if cur:
+                lines.append(cur)
+        return lines
     lines = []
     for para in str(text).split("\n"):
         cur = ""
@@ -748,6 +796,21 @@ def wrap_text(pdf, text, width_mm):
 def wrap_title(pdf, text, width_mm):
     """Character-greedy wrap so short tokens (e.g. 'MBW') are never left on
     their own line; trailing characters move to a centered second line."""
+    if EN:
+        # Word-boundary wrap for English titles: keep every word on one line.
+        lines = []
+        for para in str(text).split("\n"):
+            cur = ""
+            for w in para.split(" "):
+                trial = w if not cur else cur + " " + w
+                if cur and pdf.get_string_width(trial) > width_mm:
+                    lines.append(cur)
+                    cur = w
+                else:
+                    cur = trial
+            if cur:
+                lines.append(cur)
+        return lines
     lines = []
     cur = ""
     for ch in text:
@@ -758,11 +821,19 @@ def wrap_title(pdf, text, width_mm):
             cur += ch
     if cur:
         lines.append(cur)
+    # Avoid a single CJK character occupying a whole line (标题单字成行).
+    while len(lines) > 1 and len(lines[-1]) <= 1:
+        take = min(2 - len(lines[-1]), len(lines[-2]))
+        if take <= 0:
+            break
+        lines[-1] = lines[-2][-take:] + lines[-1]
+        lines[-2] = lines[-2][:-take]
     return lines
 
 
 def draw_mixed(pdf, x, y, width, lh, text, size,
-               align="L", reg_font="Song", italic_font="TimesI"):
+               align="L", reg_font="Song", italic_font="TimesI",
+               justify=False, is_last=False):
     """Draw one PDF line with italic Latin/gene segments in Times Italic."""
     if EN:
         reg_font = "TimesR"
@@ -781,18 +852,61 @@ def draw_mixed(pdf, x, y, width, lh, text, size,
         pdf.set_font(italic_font if it else reg_font, size=size)
         return pdf.get_string_width(seg)
 
-    total = sum(seg_w(seg, it) for seg, it in parts)
+    # Split into words on spaces (each word keeps its italic sub-runs).
+    flags = [False] * len(text)
+    for s, e in spans:
+        for i in range(s, e):
+            flags[i] = True
+    words = []
+    i = 0
+    n = len(text)
+    while i < n:
+        if text[i] == " ":
+            i += 1
+            continue
+        j = i
+        while j < n and text[j] != " ":
+            j += 1
+        runs = []
+        k = i
+        while k < j:
+            f = flags[k]
+            m = k
+            while m < j and flags[m] == f:
+                m += 1
+            runs.append((text[k:m], f))
+            k = m
+        words.append(runs)
+        i = j
+    word_widths = [sum(seg_w(s, i) for s, i in wp) for wp in words]
+    total = sum(word_widths)
+    n_words = len(words)
+    # Explicit inter-word space width: justified lines stretch it to fill width;
+    # the last line of a paragraph keeps natural spacing.
+    pdf.set_font(reg_font, size=size)
+    nat_space = pdf.get_string_width(" ")
+    if justify and not is_last and n_words > 1:
+        space_w = (width - total) / (n_words - 1)
+    else:
+        space_w = nat_space
     x0 = x
     if align == "C":
-        x0 = x + (width - total) / 2
+        x0 = x + (width - total - space_w * (n_words - 1)) / 2
     pdf.set_text_color(25, 25, 25)
-    for seg, it in parts:
-        if not seg:
-            continue
-        pdf.set_font(italic_font if it else reg_font, size=size)
-        pdf.set_xy(x0, y)
-        pdf.cell(pdf.get_string_width(seg), lh, seg, align="L")
-        x0 += pdf.get_string_width(seg)
+    for wi, wp in enumerate(words):
+        last = (wi == n_words - 1)
+        for j, (seg, it) in enumerate(wp):
+            txt = seg
+            cw = seg_w(seg, it)
+            if j == len(wp) - 1 and not last:
+                # Append the inter-word space to the word text so it stays in
+                # the text layer; extend the cell width to the justified space.
+                txt = seg + " "
+                cw += space_w
+            pdf.set_font(italic_font if it else reg_font, size=size)
+            pdf.set_xy(x0, y)
+            pdf.cell(cw, lh, txt, align="L")
+            x0 += cw
 
 
 def docx_title_lines(text, size_pt, max_mm):
@@ -807,6 +921,23 @@ def docx_title_lines(text, size_pt, max_mm):
             return mm * 0.28
         return mm * 0.52          # Latin letters / digits
 
+    def w_w(s):
+        return sum(cw(ch) for ch in s)
+
+    if EN:
+        # Word-boundary estimate: keep every word on one line.
+        lines, cur = [], ""
+        for w in text.split(" "):
+            trial = w if not cur else cur + " " + w
+            if cur and w_w(trial) > max_mm:
+                lines.append(cur)
+                cur = w
+            else:
+                cur = trial
+        if cur:
+            lines.append(cur)
+        return lines
+
     lines, cur, cur_w = [], "", 0.0
     for ch in text:
         w = cw(ch)
@@ -818,6 +949,13 @@ def docx_title_lines(text, size_pt, max_mm):
             cur_w += w
     if cur:
         lines.append(cur)
+    # Avoid a single CJK character occupying a whole line (标题单字成行).
+    while len(lines) > 1 and len(lines[-1]) <= 1:
+        take = min(2 - len(lines[-1]), len(lines[-2]))
+        if take <= 0:
+            break
+        lines[-1] = lines[-2][-take:] + lines[-1]
+        lines[-2] = lines[-2][:-take]
     return lines
 
 
@@ -990,10 +1128,11 @@ def build_pdf(ref_keys):
         pdf.cell(lw, lh, label)
         pdf.set_font("TimesR" if EN else "Song", size=body_size)
         pdf.set_text_color(35, 35, 35)
-        draw_mixed(pdf, x_first + lw, y, width_first, lh, lines[0], body_size)
+        draw_mixed(pdf, x_first + lw, y, width_first, lh, lines[0], body_size,
+                   justify=True, is_last=(len(lines) == 1))
         for k, ln in enumerate(lines[1:], start=1):
             draw_mixed(pdf, LM + block_mm, y + k * lh, PAGE_W - block_mm,
-                       lh, ln, body_size)
+                       lh, ln, body_size, justify=True, is_last=(k == len(lines) - 1))
         pdf.set_xy(LM, y + total)
         pdf.ln(1.2)
 
@@ -1005,7 +1144,7 @@ def build_pdf(ref_keys):
         pdf.ln(2)
         pdf.set_font("TimesB", size=14)
         pdf.set_text_color(15, 15, 15)
-        pdf.multi_cell(PAGE_W, 7.5, CONTENT["title_en"], align="L")
+        pdf.multi_cell(PAGE_W, 7.5, CONTENT["title_en"], align="C")
         pdf.set_x(LM)
         pdf.ln(2)
     if not EN and CONTENT.get("abstract_en"):
@@ -1016,7 +1155,7 @@ def build_pdf(ref_keys):
 
     def section(title, sec_no):
         pdf.ln(2.5)
-        set_font("TimesB" if EN else "Song", 14, (15, 15, 15))
+        set_font("TimesB" if EN else "Hei", 14, (15, 15, 15))
         label = f"{sec_no}  {title}" if sec_no else title
         pdf.multi_cell(0, 7.6, label, align="L")
         pdf.set_x(LM)
@@ -1038,9 +1177,11 @@ def build_pdf(ref_keys):
         if y + len(lines) * lh > Y_BOTTOM:
             pdf.add_page()
             y = pdf.get_y()
-        draw_mixed(pdf, LM + indent, y, PAGE_W - indent, lh, lines[0], 10.5)
+        draw_mixed(pdf, LM + indent, y, PAGE_W - indent, lh, lines[0], 10.5,
+                   justify=True, is_last=(len(lines) == 1))
         for k, ln in enumerate(lines[1:], start=1):
-            draw_mixed(pdf, LM, y + k * lh, PAGE_W, lh, ln, 10.5)
+            draw_mixed(pdf, LM, y + k * lh, PAGE_W, lh, ln, 10.5,
+                       justify=True, is_last=(k == len(lines) - 1))
         pdf.set_xy(LM, y + len(lines) * lh)
         pdf.ln(0.5)
 

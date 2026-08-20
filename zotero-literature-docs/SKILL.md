@@ -68,9 +68,10 @@ python work/zotero_docs.py ppt work/deck_config.json
    - appends an alphabetically sorted reference list in Chinese journal format.
    Outputs: `outputs/<output>.docx` and `.pdf`, both garble-scanned.
    The PDF follows Chinese journal typography (SimSun/SimHei, sizes, line spacing,
-   numbered headings, first-line indents). Optional `keywords`, `table`
-   (caption + columns + rows) and `image` (path + caption) fields in the
-   content JSON are rendered with the journal's caption style.
+   numbered headings, first-line indents). Optional fields in the content JSON:
+   `keywords`, `table` (caption + columns + rows), `image` (path + caption), and for
+   Chinese documents `title_en` (bold English title), `abstract_en` (English
+   abstract), `keywords_en` (English keywords); Abstract/Keywords labels are bold.
 5. **Figures.** `python work/extract_figures.py KEY1,KEY2,...` crops embedded
    raster figures (real figures, not whole-page screenshots) to
    `work/ppt_images/<KEY>_f1.png` etc. Use `--whole-page` only when a paper has
@@ -82,7 +83,9 @@ python work/zotero_docs.py ppt work/deck_config.json
    - `cover` (title / subtitle / note1 / note2)
    - `toc` (items)
    - `pic` (title, optional subtitle, `img` key, `fig` number; caption is
-     auto-generated as "图片引自参考文献[n]：作者（年份）《标题》")
+     auto-generated as "{title}（{author}，{year}，{journal}）" (Chinese) or
+     "{title} ({author}, {year}, {journal})" (English); titles are sentence-cased
+     with italic gene names / Latin binomials)
    - `text` (title, lines)
    - `refs` (count of references to list)
    `python work/assemble_pptx.py work/deck_config.json --out outputs/xxx.pptx`
@@ -112,8 +115,9 @@ python work/zotero_docs.py ppt work/deck_config.json
 - PPT figures are cropped real figures by default; do not render whole pages
   unless the user explicitly accepts full-page screenshots.
 - In-text citations are author-year （Zhang et al.，2015）; consecutive citations
-  merge into one parenthesis separated by semicolons. The reference list is
-  alphabetical by first author in the format 作者. 年份. 标题. 期刊，卷(期)：页码.
+  merge into one parenthesis separated by semicolons and are ordered by
+  publication year (ascending; same-year by first-author surname). The reference
+  list is alphabetical by first author in the format 作者. 年份. 标题. 期刊，卷(期)：页码.
   English titles use sentence case; gene names and Latin binomials are italic,
   naming authorities (e.g. Linden.) stay regular with a capital initial.
 - Review PDFs follow Chinese journal typography (SimSun/SimHei/Times, numbered headings,
@@ -125,6 +129,16 @@ python work/zotero_docs.py ppt work/deck_config.json
 - English mode: set `"lang": "en"` in `review_content.json` (and optionally in
   `deck_config.json`) to render English labels (Abstract / Keywords /
   References) in Word/PDF and English PPT captions ("Figure from reference [n]").
+
+- PPT numbering convention: Chinese decks use 一、二、三… for level-1 headings and
+  restart level-2 numbering at 1、2、3… within each section; English decks use
+  1、2、3… for level-1 and 1.1、1.2…2.1、2.2… for level-2 (set directly in the deck
+  config titles). Body bullet points use • (Chinese) / * (English) markers, never
+  auto numbers, so no number repeats with heading numbers.
+- PPT reference list format: "Author, Year. Title. Journal, vol(issue): pages."
+  (no 《》 and no [n] prefix), sorted by first-author surname; English titles use
+  sentence case; gene names and Latin binomials are italic (all-caps gene names
+  such as AUXIN RESPONSE FACTOR3 stay all caps and italic).
 - Do not use Word COM for conversion (hangs on this machine). PowerPoint COM
   `AddPicture` is unstable; assemble pictures via XML instead.
 

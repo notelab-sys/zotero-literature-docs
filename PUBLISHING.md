@@ -14,7 +14,7 @@
 ## 发布前检查清单
 
 1. **可见性**：仓库 Settings → 改为 Public；发布前再确认无敏感信息（已扫描，仅含系统字体路径）
-2. **许可证**：确认 MIT（见 `LICENSE`，版权人 konjac2027）；如需其他协议请先替换
+2. **许可证**：确认 MIT（见 `LICENSE`，版权人 notelab）；如需其他协议请先替换
 3. **README 复核**：功能、快速开始、环境要求、目录结构与实际内容一致
 4. **脚本自检**：在干净环境跑通 `zotero_docs.py status`，确认依赖说明完整（fpdf2 / fontTools / PyMuPDF / python-docx / lxml）
 5. **版本标记**：`git tag v0.1.0` 并推送；可选创建 GitHub Release（附三件套示例输出截图或样例文件）

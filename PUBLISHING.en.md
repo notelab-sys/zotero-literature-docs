@@ -14,7 +14,7 @@ Current status: the repository is **Private**. This document is the preparation 
 ## Pre-release checklist
 
 1. **Visibility**: repository Settings → make Public; re-check that no sensitive information is present (already scanned — only system font paths)
-2. **License**: confirm MIT (see `LICENSE`, copyright holder konjac2027); replace if another license is preferred
+2. **License**: confirm MIT (see `LICENSE`, copyright holder notelab); replace if another license is preferred
 3. **README review**: features, quick start, requirements and layout match the actual content (Chinese `README.md` + English `README.en.md`)
 4. **Script self-check**: `zotero_docs.py status` passes on a clean machine; dependency notes are complete (fpdf2 / fontTools / PyMuPDF / python-docx / lxml)
 5. **Version tag**: `git tag v0.1.0` and push; optionally create a GitHub Release (with sample Word/PDF/PPT outputs)

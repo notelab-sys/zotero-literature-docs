@@ -160,3 +160,22 @@ PowerPoint 生成的骨架合并；含图片的 PPT 必须用有窗口方式打�
    大写；基因全称（如 AUXIN RESPONSE FACTOR）大写斜体；双名学名属名与种名
    均斜体、命名人（如 Linden.、Pierre ex A. Froehner）保留首字母大写且正体；
    作者名首字母大写正体。
+
+## 更新（2026-08-17）：PPT 编号/参考文献格式/中文英文题录
+
+1. **PPT 要点不再自动编号**：build_pptx.py 的 text_slide 由 numbered=True 改为
+   bullet=True，中文用圆点「•」、英文用星号「*」，避免要点编号与标题编号重复。
+2. **PPT 标题编号**：中文一级标题 一、二、三…，二级标题按一级标题分段从 1、2、3…
+   重新编号；英文一级标题 1、2、3…，二级标题 1.1、1.2…2.1、2.2…（标题在
+   deck_config 中直接书写）。
+3. **PPT 参考文献列表**：格式“作者, 年份. 标题. 期刊, 卷(期): 页码.”（无《》、
+   无 [n]），按第一作者姓氏字母排序；标题句首大写，连续基因名（AUXIN RESPONSE
+   FACTOR3、AUXIN RESPONSE FACTOR 5）全大写斜体，基因名/拉丁学名/属名斜体。
+4. **PPT 富文本斜体**：fmt_paragraph 新增 spans 参数（分段 run 渲染，斜体 run
+   加 i="1"）；新增 italic_spans()（PPT_ITALIC/PPT_GENERA/PPT_PROPER 词库）与
+   en_scase()（句首大写，保留斜体片段与 Orchidaceae 等专有名词）。
+5. **中文文档英文题录**：review_content.json 支持 title_en / abstract_en /
+   keywords_en；Word 的 Abstract/Keywords 标签加粗（add_labeled_para），PDF 标签
+   用 TimesB、英文标题居中。
+6. **多文献引用顺序**：同一括号内按发表年份先后排列，同年按第一作者姓氏；
+   作者在 review_content.json 中按此顺序书写 citation token。
