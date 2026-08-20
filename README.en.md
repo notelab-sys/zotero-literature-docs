@@ -92,3 +92,9 @@ zotero-literature-docs/
 ## License
 
 MIT License — see [LICENSE](LICENSE).
+
+## Feedback
+
+If you encounter any issues or have suggestions, please open an Issue at
+https://github.com/notelab-sys/zotero-literature-docs/issues. We will review and
+respond in time.

@@ -92,3 +92,7 @@ zotero-literature-docs/
 ## 开源协议
 
 MIT License，见 [LICENSE](LICENSE)。
+
+## 使用反馈
+
+使用中遇到问题或有改进建议，欢迎在 GitHub Issues 提交：https://github.com/notelab-sys/zotero-literature-docs/issues 。我们会及时查看处理。
