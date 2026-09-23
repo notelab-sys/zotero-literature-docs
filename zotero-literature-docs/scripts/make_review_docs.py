@@ -612,25 +612,41 @@ def _docx_three_line(table):
     borders = tblPr.find(qn("w:tblBorders"))
     if borders is None:
         borders = OxmlElement("w:tblBorders")
-        tblPr.append(borders)
+        # OOXML 对 tblPr 子元素顺序有严格要求：tblBorders 必须排在
+        # shd / tblLayout / tblCellMar / tblLook 等之前，否则 Word 报 schema 错误。
+        successors = [qn(t) for t in ("w:shd", "w:tblLayout", "w:tblCellMar", "w:tblLook", "w:tblCaption", "w:tblDescription")]
+        pos = len(tblPr)
+        for idx, child in enumerate(tblPr):
+            if child.tag in successors:
+                pos = idx
+                break
+        tblPr.insert(pos, borders)
     for child in list(borders):
         borders.remove(child)
-    for edge, sz in [("top", "12"), ("bottom", "12")]:
+    # 子元素顺序同样受 schema 约束：top → left → bottom → right → insideH → insideV
+    for edge, sz in [("top", "12"), ("left", "none"), ("bottom", "12"),
+                     ("right", "none"), ("insideH", "none"), ("insideV", "none")]:
         el = OxmlElement(f"w:{edge}")
-        el.set(qn("w:val"), "single")
-        el.set(qn("w:sz"), sz)
-        el.set(qn("w:color"), "000000")
-        borders.append(el)
-    for edge in ["left", "right", "insideH", "insideV"]:
-        el = OxmlElement(f"w:{edge}")
-        el.set(qn("w:val"), "none")
+        if sz == "none":
+            el.set(qn("w:val"), "none")
+        else:
+            el.set(qn("w:val"), "single")
+            el.set(qn("w:sz"), sz)
+            el.set(qn("w:color"), "000000")
         borders.append(el)
     for cell in table.rows[0].cells:
         tcPr = cell._tc.get_or_add_tcPr()
         tcB = tcPr.find(qn("w:tcBorders"))
         if tcB is None:
             tcB = OxmlElement("w:tcBorders")
-            tcPr.append(tcB)
+            # tcPr 同样要求 tcBorders 排在 shd / tcMar / vAlign 等之前。
+            tc_successors = [qn(t) for t in ("w:shd", "w:noWrap", "w:tcMar", "w:textDirection", "w:tcFitText", "w:vAlign", "w:hideMark")]
+            pos = len(tcPr)
+            for idx, child in enumerate(tcPr):
+                if child.tag in tc_successors:
+                    pos = idx
+                    break
+            tcPr.insert(pos, tcB)
         b = OxmlElement("w:bottom")
         b.set(qn("w:val"), "single")
         b.set(qn("w:sz"), "6")

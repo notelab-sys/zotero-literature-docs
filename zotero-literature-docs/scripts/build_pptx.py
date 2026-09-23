@@ -203,8 +203,8 @@ def fmt_paragraph(text, size=1500, bold=False, color="333333", bullet=False, ali
 
     def rpr(i=0):
         return [f"<a:rPr lang=\"zh-CN\" sz=\"{size}\" b=\"{1 if bold else 0}\" i=\"{i}\" dirty=\"0\">",
-                "<a:latin typeface=\"Times New Roman\"/><a:ea typeface=\"SimSun\"/>",
-                f"<a:solidFill><a:srgbClr val=\"{color}\"/></a:solidFill></a:rPr>"]
+                f"<a:solidFill><a:srgbClr val=\"{color}\"/></a:solidFill>",
+                "<a:latin typeface=\"Times New Roman\"/><a:ea typeface=\"SimSun\"/></a:rPr>"]
 
     ppr = [f"<a:pPr algn=\"{align}\" marL=\"228600\" indent=\"-228600\">",
            f"<a:lnSpc><a:spcPct val=\"{ls}000\"/></a:lnSpc>",
